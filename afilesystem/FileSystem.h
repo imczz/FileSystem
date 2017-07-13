@@ -45,7 +45,7 @@ class FileSystem
 	int dInodeBLK;		//所有磁盘i节点共占32个物理块
 	int fileBLK;		//共有512个目录文件物理块
 	int nicFree;		//超级块中空闲块数组的最大块数
-	int nicInode;		//超级块中空闲节点的最大块数
+	int nicInode;		//超级块中空闲i节点的最大块数
 	int dInodeStart;	//i节点起始地址
 	int dataStart;		//目录、文件区起始地址
 
@@ -81,9 +81,9 @@ public:
 	//写一个块
 	int WriteABlock(int blockNumber, char * buffer);
 
-	void BufferToStack();
+	int BufferToStack(char * buffer, int * blockStack);
 
-	void StackToBuffer();
+	int StackToBuffer(int * blockStack, char * buffer);
 
 	//磁盘i节点的分配
 	int ialloc();

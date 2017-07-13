@@ -165,7 +165,7 @@ int FileSystem::balloc()
 int FileSystem::bfree(int blockindex)
 {
 	if (!IsInitalized) return 0;
-	if (superBlock.freeStackBlockNumber == nicInode)
+	if (superBlock.freeStackBlockNumber == nicFree)
 	{
 		//wtire ∂—’ªS  µΩøÈBlockNo÷–£ª
 		//S[0] = 1£ª
@@ -183,6 +183,26 @@ int FileSystem::format()
 {
 	if (!IsInitalized) return 0;
 
+
+	return 1;
+}
+
+int To9Char(int number, char * result)
+{
+	if (number < 0 || number >= 512 || result == NULL) return 0;
+	int i;
+	result[1] = number;
+	result[0] = number >> 8;
+}
+
+int bitCopy(char * target, int tBitStart, char * source, int sBitStart, int bitLength)
+{
+
+}
+
+int FileSystem::StackToBuffer(int * blockStack, char * buffer)
+{
+	if (blockStack == NULL || buffer == NULL) return 0;
 
 	return 1;
 }
