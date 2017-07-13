@@ -8,6 +8,11 @@ FileSystem::FileSystem()
 	IsInitalized = false;
 	init();
 }
+FileSystem::FileSystem(string diskFile)
+{
+	IsInitalized = false;
+	this->diskFile = diskFile;
+}
  //
 int FileSystem::WriteFileSystemDiskFile(string address)
 {
@@ -80,4 +85,9 @@ void FileSystem::init()
 	dInodeStart = DINODESTART;	//i节点起始地址
 	dataStart = DATASTART;		//目录、文件区起始地址
 	IsInitalized = true;
+}
+
+void FileSystem::format()
+{
+
 }

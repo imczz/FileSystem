@@ -20,10 +20,13 @@
 
 #include <string>
 
+#include "SuperBlock.h"
+
 using namespace std;
 
 class FileSystem
 {
+	string diskFile;
 	int type;
 
 	bool IsInitalized;				//经过初始化
@@ -46,10 +49,12 @@ class FileSystem
 	int dInodeStart;	//i节点起始地址
 	int dataStart;		//目录、文件区起始地址
 
-	
+	SuperBlock superBlock;
 public:
 	//沟槽函数
 	FileSystem();
+
+	FileSystem(string diskFile);
 
 	//初始化参数
 	void init();
