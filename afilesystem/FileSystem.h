@@ -48,9 +48,72 @@ class FileSystem
 
 	
 public:
+	//沟槽函数
 	FileSystem();
 
+	//初始化参数
 	void init();
+
+	//将文件系统写入到文件中
 	int WriteFileSystemDiskFile(string address);
+
+	//将文件系统从文件中读取
 	int ReadFileSystemDiskFile(string address);
+
+	//磁盘i节点的分配
+	int ialloc();
+
+	//磁盘i节点的回收
+	int ifree();
+
+	//内存i节点获取
+	int iget();
+
+	//内存i节点释放
+	int iput();
+
+	//判断用户对文件有无某种特性访问权限
+	int access();
+
+	//实现对文件的存取搜索，将给定的路径名转换成所要搜索的文件的内存i结点指针（在目录数组中的位置）
+	int namei();
+
+	//在当前目录下搜索到一个空的目录数组，以便建立新的目录或文件时使用
+	int iname();
+
+	//空闲块的分配
+	int balloc();
+
+	//index块的回收
+	int bfree(int blockindex);
+
+	//文件系统格式化
+	void format();
+
+	//文件打开
+	int open();
+
+	//文件关闭
+	int close();
+
+	//文件创建
+	int CreateFile();
+
+	//文件删除
+	int DeleteFile();
+
+	//读取文件
+	int read();
+
+	//写入文件
+	int write();
+
+	//创建目录
+	int mkdir();
+
+	//改变当前目录
+	int chdir();
+
+	//列出文件目录
+	int dir();
 };
