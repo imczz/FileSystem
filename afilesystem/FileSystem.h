@@ -50,20 +50,40 @@ class FileSystem
 	int dataStart;		//目录、文件区起始地址
 
 	SuperBlock superBlock;
-public:
-	//沟槽函数
-	FileSystem();
-
-	FileSystem(string diskFile);
 
 	//初始化参数
 	void init();
+public:
+	//构造函数，构造后未经初始化，无法使用
+	FileSystem();
+
+	//可以初始化的构造函数
+	FileSystem(string diskFile);
+
+	//初始化文件系统（没有地址则初始化失败），成功返回1，失败返回0
+	int Initialize();
+
+	//可以换一个文件系统文件并且尝试初始化，成功返回1，失败返回0
+	int Initialize(string diskFile);
 
 	//将文件系统写入到文件中
 	int WriteFileSystemDiskFile(string address);
 
 	//将文件系统从文件中读取
 	int ReadFileSystemDiskFile(string address);
+
+	//创建文件系统文件disk.txt
+	int CreateDiskFile(string address);
+
+	//读一个块
+	int ReadABlock(int blockNumber, char * buffer);
+
+	//写一个块
+	int WriteABlock(int blockNumber, char * buffer);
+
+	void BufferToStack();
+
+	void StackToBuffer();
 
 	//磁盘i节点的分配
 	int ialloc();
@@ -93,7 +113,7 @@ public:
 	int bfree(int blockindex);
 
 	//文件系统格式化
-	void format();
+	int format();
 
 	//文件打开
 	int open();

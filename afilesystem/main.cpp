@@ -8,6 +8,8 @@ using namespace std;
 int main()
 {
 	FileSystem fs;
+	cout << fs.Initialize() << endl;
+	cout << fs.Initialize("D:\\disk.txt") << endl;
 	cout << fs.WriteFileSystemDiskFile("D:\\1.txt") << endl;
 	cout << fs.ReadFileSystemDiskFile("D:\\1.txt") << endl;
 	cout << "Hello world!" << endl;

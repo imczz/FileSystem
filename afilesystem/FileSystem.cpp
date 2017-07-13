@@ -5,15 +5,73 @@
 
 FileSystem::FileSystem()
 {
-	IsInitalized = false;
 	init();
 }
+
 FileSystem::FileSystem(string diskFile)
 {
-	IsInitalized = false;
+	init();
 	this->diskFile = diskFile;
+	
+	ifstream file(diskFile, ios::in);
+
+	if (file.is_open()) {
+		IsInitalized = true;
+		file.close();
+		return;
+	}
+	else
+	{
+		int filesize = (2 + this->dInodeBLK + this->fileBLK) * this->blockSize;
+		char * buffer = (char *)calloc(filesize, sizeof(char));
+		if (buffer == NULL) return;						//分配内存空间失败
+		ofstream file(diskFile, ios::out | ios::binary);
+		if (file.is_open()) {
+			file.write(buffer, filesize);					//操作成功
+			IsInitalized = true;
+			file.close();
+		}
+	}
+	
 }
- //
+
+int FileSystem::Initialize()
+{
+	if (IsInitalized) return 1;
+	if (this->diskFile != "") 
+	{
+		Initialize(this->diskFile);
+	}
+	return 0;
+}
+
+int FileSystem::Initialize(string diskFile)
+{
+	if (IsInitalized) return 1;
+	this->diskFile = diskFile;
+	ifstream file(diskFile, ios::in);
+
+	if (file.is_open()) {
+		IsInitalized = true;
+		file.close();
+		return 1;
+	}
+	else
+	{
+		int filesize = (2 + this->dInodeBLK + this->fileBLK) * this->blockSize;
+		char * buffer = (char *)calloc(filesize, sizeof(char));
+		if (buffer == NULL) return 0;						//分配内存空间失败
+		ofstream file(diskFile, ios::out | ios::binary);
+		if (file.is_open()) {
+			file.write(buffer, filesize);					//操作成功
+			IsInitalized = true;
+			file.close();
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int FileSystem::WriteFileSystemDiskFile(string address)
 {
 	int result = 0;
@@ -23,8 +81,6 @@ int FileSystem::WriteFileSystemDiskFile(string address)
 
 	char * buffer = (char *)calloc(filesize, sizeof(char));
 	if (buffer == NULL) return -2;						//分配内存空间失败
-	buffer[1] = 'D';
-	buffer[2] = 'K';
 	ofstream file(address, ios::out | ios::binary );
 
 	if (file.is_open()) {
@@ -52,7 +108,7 @@ int FileSystem::ReadFileSystemDiskFile(string address)
 	if (file.is_open()) {
 		file.read(buffer, filesize);					//操作成功
 		file.close();
-		char xyz = buffer[1];
+		//char xyz = buffer[1];
 		result = 1;
 	}
 	else
@@ -62,8 +118,6 @@ int FileSystem::ReadFileSystemDiskFile(string address)
 	free(buffer);
 	return result;
 }
-
-
 
 void FileSystem::init()
 {
@@ -84,10 +138,51 @@ void FileSystem::init()
 	nicInode = NICINOD;		//超级块中空闲节点的最大块数
 	dInodeStart = DINODESTART;	//i节点起始地址
 	dataStart = DATASTART;		//目录、文件区起始地址
-	IsInitalized = true;
+
+	superBlock.dataBlockNumber = 512;
+	superBlock.freeBlockNumber = 0;
+	superBlock.freeBlocks[0] = 0;
+	superBlock.freeStackBlockNumber = 0;
+	superBlock.freeInodeNumber = 512;
+	for (int i = 0; i < superBlock.freeInodeNumber; i++)
+	{
+		superBlock.freeInodes[i] = i;
+	}
+	superBlock.iNodeBlockNumber = 32;
+	superBlock.lastInode = superBlock.freeInodeNumber - 1;
+	superBlock.modifyFlag = false;
+
+	IsInitalized = false;
 }
 
-void FileSystem::format()
+int FileSystem::balloc()
 {
+	
 
+	return 1;
+}
+
+int FileSystem::bfree(int blockindex)
+{
+	if (!IsInitalized) return 0;
+	if (superBlock.freeStackBlockNumber == nicInode)
+	{
+		//wtire 堆栈S  到块BlockNo中；
+		//S[0] = 1；
+		//S[1] = BlockNo
+	}
+	else
+	{
+		//S[0] ++;
+		//S[S[0]] = BlockNo;
+	}
+	return 0;
+}
+
+int FileSystem::format()
+{
+	if (!IsInitalized) return 0;
+
+
+	return 1;
 }
