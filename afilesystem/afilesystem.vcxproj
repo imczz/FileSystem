@@ -114,11 +114,13 @@
     <ClCompile Include="Inode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OS.cpp" />
+    <ClCompile Include="user.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="Inode.h" />
     <ClInclude Include="OS.h" />
+    <ClInclude Include="user.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
