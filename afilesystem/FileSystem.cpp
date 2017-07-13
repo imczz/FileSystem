@@ -8,7 +8,7 @@ FileSystem::FileSystem()
 	IsInitalized = false;
 	init();
 }
-
+ //
 int FileSystem::WriteFileSystemDiskFile(string address)
 {
 	int result = 0;
