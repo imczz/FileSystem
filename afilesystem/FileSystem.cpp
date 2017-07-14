@@ -265,7 +265,7 @@ int FileSystem::BufferToStack(char * buffer, short * blockStack)
 	if (tempshort < 0) tempshort = -tempshort;
 	number |= tempshort;
 	if (number != this->nicFree) return 0;
-	for (int i = 0; i < number; i++)
+	for (int i = 0; i < this->nicFree; i++)
 	{
 		blockStack[i] = buffer[pointer];
 		blockStack[i] <<= 8;
@@ -286,13 +286,13 @@ int FileSystem::StackToBuffer(short * blockStack, char * buffer)
 	int i;
 	buffer[0] = number >> 8;
 	buffer[1] = number;
-	for (i = 0; i < number; i++)
+	for (i = 0; i < this->nicFree; i++)
 	{
 		buffer[pointer] = blockStack[i] >> 8;
 		buffer[pointer + 1] = blockStack[i];
 		pointer += 2;
 	}
-	for (; i < this->blockSize; i++)
+	for (i = pointer; i < this->blockSize; i++)
 	{
 		buffer[i] = 0;					// £”‡≤ø∑÷ÃÓ≥‰0
 	}
