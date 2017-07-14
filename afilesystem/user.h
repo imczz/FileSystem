@@ -4,7 +4,7 @@
 
 using namespace std;
 
-class user
+class User
 {
 	//用户名
 	string username;
@@ -16,14 +16,14 @@ class user
 	string group;
 public:
 	//构造函数
-	user();
+	User();
 
 	//另一个构造函数
-	user(string & name, string &  pass, string &  group);
+	User(string & name, string &  pass, string &  group);
 
 
 
 	//析构函数
-	~user();
+	~User();
 };
 

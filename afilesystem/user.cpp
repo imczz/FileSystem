@@ -2,11 +2,11 @@
 
 
 
-user::user()
+User::User()
 {
 }
 
-user::user(string & name, string & pass, string & group)
+User::User(string & name, string & pass, string & group)
 {
 	this->username = name;
 	this->password = pass;
@@ -14,6 +14,6 @@ user::user(string & name, string & pass, string & group)
 }
 
 
-user::~user()
+User::~User()
 {
 }

@@ -161,32 +161,66 @@ void FileSystem::init()
 
 int FileSystem::balloc()
 {
-	
-
-	return 1;
+	if (!IsInitalized) return -1;
+	int r;
+	char buffer[512] = { 0 };
+	if (superBlock.freeStackBlockNumber == 1)
+	{
+		if (superBlock.freeBlocks[0] == 0)  //分配失败，进程等待；
+		{
+			return -2;
+		}
+		else 
+		{
+			r = superBlock.freeBlocks[0];
+			ReadABlock(this->dataStart + r, buffer);
+			if(BufferToStack(buffer, superBlock.freeBlocks) < 0 ) return -2;
+			//return r;
+		}
+	}
+	else
+	{
+		r = superBlock.freeBlocks[superBlock.freeStackBlockNumber - 1];
+		superBlock.freeStackBlockNumber--;
+		//return r;
+	}
+	superBlock.freeBlockNumber--;
+	return r;
 }
 
 int FileSystem::bfree(int blockindex)
 {
-	if (!IsInitalized) return 0;
+	if (!IsInitalized) return -1;
 	if (superBlock.freeStackBlockNumber == nicFree)
 	{
-		//wtire 堆栈S  到块BlockNo中；
-		//S[0] = 1；
-		//S[1] = BlockNo
+		char buffer[512] = { 0 };
+		if (StackToBuffer(superBlock.freeBlocks, buffer) < 0) return -2;
+		if (WriteABlock(2 + this->dInodeBLK + blockindex, buffer) < 0) return -3;
+		superBlock.freeStackBlockNumber = 1;
+		superBlock.freeBlocks[0] = blockindex;
 	}
 	else
 	{
-		//S[0] ++;
-		//S[S[0]] = BlockNo;
+		superBlock.freeBlocks[superBlock.freeStackBlockNumber] = blockindex;
+		superBlock.freeStackBlockNumber++;
+		
+		//课程PPT上提供的方法是栈深51，S[0]是数量，而实验PPT超级快记录了空闲块个数，这样栈深是50
 	}
-	return 0;
+	superBlock.freeBlockNumber++;
+	return 1;
 }
 
 int FileSystem::format()
 {
-	if (!IsInitalized) return 0;
-
+	if (!IsInitalized) return -1;
+	int i;
+	for (i = this->blockSize - 1; i >= 0; i--)
+	{
+		if (bfree(i) < 0)
+		{
+			;
+		}
+	}
 
 	return 1;
 }
@@ -195,7 +229,7 @@ int FileSystem::format()
 
 int FileSystem::ReadABlock(int blockNumber, char * buffer)
 {
-	if (buffer == NULL) return 0;
+	if (buffer == NULL) return -1;
 	ifstream file(diskFile, ios::in | ios::binary);
 
 	if (file.is_open()) {
@@ -204,12 +238,12 @@ int FileSystem::ReadABlock(int blockNumber, char * buffer)
 		file.close();
 		return 1;
 	}
-	return 0;
+	return -1;
 }
 
 int FileSystem::WriteABlock(int blockNumber, char * buffer)
 {
-	if (this->diskFile == "") return 0;
+	if (this->diskFile == "") return -1;
 	ofstream file(this->diskFile, ios::in | ios::binary | ios::ate);
 	if (file.is_open()) {
 		file.seekp(blockNumber * this->blockSize, ios::beg);
@@ -217,7 +251,7 @@ int FileSystem::WriteABlock(int blockNumber, char * buffer)
 		file.close();
 		return 1;
 	}
-	return 0;
+	return -1;
 }
 
 //存储在磁盘块中的空闲块栈转化成内存中的便于程序使用的数组（栈）
@@ -240,7 +274,7 @@ int FileSystem::BufferToStack(char * buffer, short * blockStack)
 		blockStack[i] |= tempshort;
 		pointer += 2;
 	}
-	return 0;
+	return 1;
 }
 
 //内存中的便于程序使用的数组（栈）转化成存储在磁盘块中的空闲块栈
