@@ -81,9 +81,11 @@ public:
 	//写一个块
 	int WriteABlock(int blockNumber, char * buffer);
 
-	int BufferToStack(char * buffer, int * blockStack);
+	//存储在磁盘块中的空闲块栈转化成内存中的便于程序使用的数组（栈）
+	int BufferToStack(char * buffer, short * blockStack);
 
-	int StackToBuffer(int * blockStack, char * buffer);
+	//内存中的便于程序使用的数组（栈）转化成存储在磁盘块中的空闲块栈
+	int StackToBuffer(short * blockStack, char * buffer);
 
 	//磁盘i节点的分配
 	int ialloc();

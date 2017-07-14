@@ -145,8 +145,8 @@ void FileSystem::init()
 
 	superBlock.dataBlockNumber = 512;
 	superBlock.freeBlockNumber = 0;
-	superBlock.freeBlocks[0] = 0;
-	superBlock.freeStackBlockNumber = 0;
+	superBlock.freeBlocks[0] = 0;			//终止指针，指针终止
+	superBlock.freeStackBlockNumber = 1;
 	superBlock.freeInodeNumber = 512;
 	for (int i = 0; i < superBlock.freeInodeNumber; i++)
 	{
@@ -199,6 +199,7 @@ int FileSystem::ReadABlock(int blockNumber, char * buffer)
 	ifstream file(diskFile, ios::in | ios::binary);
 
 	if (file.is_open()) {
+		file.seekg(blockNumber * this->blockSize, ios::beg);
 		file.read(buffer, this->blockSize);					//操作成功
 		file.close();
 		return 1;
@@ -209,8 +210,9 @@ int FileSystem::ReadABlock(int blockNumber, char * buffer)
 int FileSystem::WriteABlock(int blockNumber, char * buffer)
 {
 	if (this->diskFile == "") return 0;
-	ofstream file(this->diskFile, ios::out | ios::binary | ios::ate);
+	ofstream file(this->diskFile, ios::in | ios::binary | ios::ate);
 	if (file.is_open()) {
+		file.seekp(blockNumber * this->blockSize, ios::beg);
 		file.write(buffer, this->blockSize);					//操作成功
 		file.close();
 		return 1;
@@ -218,14 +220,47 @@ int FileSystem::WriteABlock(int blockNumber, char * buffer)
 	return 0;
 }
 
-int FileSystem::BufferToStack(char * buffer, int * blockStack)
+//存储在磁盘块中的空闲块栈转化成内存中的便于程序使用的数组（栈）
+int FileSystem::BufferToStack(char * buffer, short * blockStack)
 {
+	int pointer = 2;			//一个指针
+	int number = 0;
+	number = buffer[0];
+	number <<= 8;
+	short tempshort = buffer[1];
+	if (tempshort < 0) tempshort = -tempshort;
+	number |= tempshort;
+	if (number != this->nicFree) return 0;
+	for (int i = 0; i < number; i++)
+	{
+		blockStack[i] = buffer[pointer];
+		blockStack[i] <<= 8;
+		tempshort = buffer[pointer + 1];
+		if (tempshort < 0) tempshort = -tempshort;
+		blockStack[i] |= tempshort;
+		pointer += 2;
+	}
 	return 0;
 }
 
-int FileSystem::StackToBuffer(int * blockStack, char * buffer)
+//内存中的便于程序使用的数组（栈）转化成存储在磁盘块中的空闲块栈
+int FileSystem::StackToBuffer(short * blockStack, char * buffer)
 {
 	if (blockStack == NULL || buffer == NULL) return 0;
-
+	int pointer = 2;		//位置指针
+	int number = this->nicFree;
+	int i;
+	buffer[0] = number >> 8;
+	buffer[1] = number;
+	for (i = 0; i < number; i++)
+	{
+		buffer[pointer] = blockStack[i] >> 8;
+		buffer[pointer + 1] = blockStack[i];
+		pointer += 2;
+	}
+	for (; i < this->blockSize; i++)
+	{
+		buffer[i] = 0;					//剩余部分填充0
+	}
 	return 1;
 }
