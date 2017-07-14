@@ -6,7 +6,7 @@ int BitOperate::getBit(char bitArray, int index)
 {
 	if (index >= 0 && index < 8)
 	{
-		char mask = 1;
+		char mask = 1;				//ÑÚÂë
 		int i, result;
 		for (i = 0; i < (7 - index); i++) mask <<= 1;
 		bitArray &= mask;
@@ -23,7 +23,7 @@ char BitOperate::setBit(char bitArray, int index, int number)
 	if (index >= 0 && index < 8)
 	{
 		int i;
-		char mask = 1;
+		char mask = 1;				//ÑÚÂë
 		char ch = bitArray;
 		for (i = 0; i < (7 - index); i++) mask <<= 1;
 		if (number == 0)     //set 0

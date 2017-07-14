@@ -81,6 +81,10 @@ int FileSystem::WriteFileSystemDiskFile(string address)
 
 	char * buffer = (char *)calloc(filesize, sizeof(char));
 	if (buffer == NULL) return -2;						//分配内存空间失败
+	for (int i = 0; i < 100; i++)
+	{
+
+	}
 	ofstream file(address, ios::out | ios::binary );
 
 	if (file.is_open()) {
@@ -191,11 +195,26 @@ int FileSystem::format()
 
 int FileSystem::ReadABlock(int blockNumber, char * buffer)
 {
+	if (buffer == NULL) return 0;
+	ifstream file(diskFile, ios::in | ios::binary);
+
+	if (file.is_open()) {
+		file.read(buffer, this->blockSize);					//操作成功
+		file.close();
+		return 1;
+	}
 	return 0;
 }
 
 int FileSystem::WriteABlock(int blockNumber, char * buffer)
 {
+	if (this->diskFile == "") return 0;
+	ofstream file(this->diskFile, ios::out | ios::binary | ios::ate);
+	if (file.is_open()) {
+		file.write(buffer, this->blockSize);					//操作成功
+		file.close();
+		return 1;
+	}
 	return 0;
 }
 
