@@ -110,6 +110,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BitOperate.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="Inode.cpp" />
     <ClCompile Include="main.cpp" />
@@ -118,6 +119,7 @@
     <ClCompile Include="user.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BitOperate.h" />
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="Inode.h" />
     <ClInclude Include="OS.h" />
