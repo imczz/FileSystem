@@ -189,6 +189,21 @@ int FileSystem::format()
 
 
 
+int FileSystem::ReadABlock(int blockNumber, char * buffer)
+{
+	return 0;
+}
+
+int FileSystem::WriteABlock(int blockNumber, char * buffer)
+{
+	return 0;
+}
+
+int FileSystem::BufferToStack(char * buffer, int * blockStack)
+{
+	return 0;
+}
+
 int FileSystem::StackToBuffer(int * blockStack, char * buffer)
 {
 	if (blockStack == NULL || buffer == NULL) return 0;

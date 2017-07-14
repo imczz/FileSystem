@@ -23,7 +23,7 @@ struct SuperBlock
 	int freeStackBlockNumber;
 
 	//空闲块指针数组
-	int freeBlocks[50];
+	short freeBlocks[50];
 
 	//超级块修改标志
 	bool modifyFlag;
