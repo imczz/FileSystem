@@ -7,7 +7,7 @@ using namespace std;
 class BitOperate
 {
 public:
-	int To9Char(int number, char * result)
+	int To9Char(short number, char * result)
 	{
 		if (number < 0 || number >= 512 || result == NULL) return 0;
 		int i;
