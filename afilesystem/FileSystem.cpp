@@ -1,7 +1,8 @@
 #include <fstream>
+#include <ctime>
 
 #include "FileSystem.h"
-
+#include "BitOperate.h"
 
 FileSystem::FileSystem()
 {
@@ -221,7 +222,28 @@ int FileSystem::format()
 			;
 		}
 	}
-
+	for (i = 0; i < 512; i++)
+	{
+		if (ifree(i) < 0)
+		{
+			;
+		}
+	}
+	bool permissions[9];
+	for (i = 0; i < 8; i++)
+	{
+		permissions[i] = true;
+	}
+	permissions[8] = false;
+	short blockIndex[10];
+	blockIndex[0] = balloc();
+	for (i = 1; i < 10; i++)
+	{
+		blockIndex[i] = -1;
+	}
+	int rootIndex = ialloc();
+	inodes[rootIndex].init(1, 1, 1, permissions, 'r', 'R', 0, time(0), blockIndex);
+	refreshInode(rootIndex);
 	return 1;
 }
 
@@ -229,7 +251,7 @@ int FileSystem::format()
 
 int FileSystem::ReadABlock(int blockNumber, char * buffer)
 {
-	if (buffer == NULL) return -1;
+	if (buffer == NULL || !IsInitalized) return -1;
 	ifstream file(diskFile, ios::in | ios::binary);
 
 	if (file.is_open()) {
@@ -243,7 +265,7 @@ int FileSystem::ReadABlock(int blockNumber, char * buffer)
 
 int FileSystem::WriteABlock(int blockNumber, char * buffer)
 {
-	if (this->diskFile == "") return -1;
+	if (this->diskFile == "" || !IsInitalized || buffer == NULL) return -1;
 	ofstream file(this->diskFile, ios::in | ios::binary | ios::ate);
 	if (file.is_open()) {
 		file.seekp(blockNumber * this->blockSize, ios::beg);
@@ -298,3 +320,48 @@ int FileSystem::StackToBuffer(short * blockStack, char * buffer)
 	}
 	return 1;
 }
+
+int FileSystem::ialloc()
+{
+	if (!IsInitalized) return -1;
+	int result;
+	int i;
+	for (i = 0; i < 512; i++)
+	{
+		if (!this->inodes[i].state) break;
+	}
+	if (i >= 0 && i < 512)
+	{
+		this->inodes[i].init(false, 0, 0, NULL, '\0', '\0', 0, 0, NULL);
+		refreshInode(i);
+		return i;
+	}
+	return -2;			//没有可用的i节点
+}
+
+int FileSystem::ifree(int index)
+{
+	if (!IsInitalized) return -1;
+	if (index < 0 || index >= 512) return -2;
+	//if (this->inodes[index].state == false);					//格式化的情况下可能会强行释放，这里不做判断
+	int i = index;
+	this->inodes[index].state = false;
+	this->inodes[i].init(false, 0, 0, NULL, '\0', '\0', 0, 0, NULL);
+	refreshInode(i);
+	return 1;
+}
+
+int FileSystem::refreshInode(int index)
+{
+	if (!IsInitalized) return -1;
+	if (index < 0 || index >= 512) return -2;
+	char inodeBuffer[32] = { 0 };
+	char blockBuffer[512] = { 0 };
+	int i = index;
+	Inode::CreateBufferFromInode(inodes[i], inodeBuffer);
+	ReadABlock(2 + i / 16, blockBuffer);
+	BitOperate::bitCopy(blockBuffer, i % 16 * 256, inodeBuffer, 0, 256);
+	WriteABlock(2 + i / 16, blockBuffer);
+	return 1;
+}
+

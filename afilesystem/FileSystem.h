@@ -21,6 +21,7 @@
 #include <string>
 
 #include "SuperBlock.h"
+#include "Inode.h"
 
 using namespace std;
 
@@ -49,7 +50,8 @@ class FileSystem
 	int dInodeStart;	//i节点起始地址
 	int dataStart;		//目录、文件区起始地址
 
-	SuperBlock superBlock;
+	SuperBlock superBlock;			//超级块
+	Inode inodes[512];				//i节点
 
 	//初始化参数
 	void init();
@@ -91,8 +93,9 @@ public:
 	int ialloc();
 
 	//磁盘i节点的回收
-	int ifree();
+	int ifree(int index);
 
+	int refreshInode(int index);
 	//内存i节点获取
 	int iget();
 
