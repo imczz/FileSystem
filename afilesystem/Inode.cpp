@@ -112,31 +112,36 @@ int Inode::LoadInodeInBuffer(char * buffer)
 	permissions[0] = BitOperate::getBit(buffer[0], 7) == 0 ? false : true;
 	for (i = 1; i < 9; i++)
 	{
-		permissions[i] = BitOperate::getBit(buffer[i], 7) == 0 ? false : true;
+		permissions[i] = BitOperate::getBit(buffer[1], i -1) == 0 ? false : true;
 	}
 
-	char userName[1];
-	BitOperate::bitCopy(userName, 0, buffer, 15, 8);
+	char userName[1] = { 0 };
+	BitOperate::bitCopy(userName, 0, buffer + 2 , 0, 8);
 
-	char userGroup[1];
-	BitOperate::bitCopy(userName, 0, buffer, 23, 8);
+	char userGroup[1] = { 0 };
+	BitOperate::bitCopy(userGroup, 0, buffer + 3, 0, 8);
 
 	char filesize[8];
 	long size = 0;
-	BitOperate::bitCopy(filesize, 0, buffer + 3, 0, 64);
+	long signal;
+	BitOperate::bitCopy(filesize, 0, buffer + 4, 0, 64);
 	for (i = 0; i < 8; i++)
 	{
-		size << 8;
-		size |= filesize[i];
+		size <<= 8;
+		signal = filesize[i];
+		if (signal < 0) signal = !signal;
+		size |= signal;
 	}
 
 	char createtime[8];
 	long cTime = 0;
-	BitOperate::bitCopy(createtime, 0, buffer + 3, 0, 64);
+	BitOperate::bitCopy(createtime, 0, buffer + 12, 0, 64);
 	for (i = 0; i < 8; i++)
 	{
-		cTime << 8;
-		cTime |= createtime[i];
+		cTime <<= 8;
+		signal = createtime[i];
+		if (signal < 0) signal = !signal;
+		cTime |= signal;
 	}
 
 	char indexList[12];

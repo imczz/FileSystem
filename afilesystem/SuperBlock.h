@@ -16,10 +16,10 @@ struct SuperBlock
 	//数据块块数
 	int dataBlockNumber;
 
-	//空闲块块数
+	//空闲数据块块数
 	int freeBlockNumber;
 
-	//空闲块块数
+	//栈元素个数
 	int freeStackBlockNumber;
 
 	//空闲块指针数组

@@ -55,6 +55,11 @@ int FileSystem::Initialize(string diskFile)
 	if (file.is_open()) {
 		IsInitalized = true;
 		file.close();
+		ReadSuperBlock();
+		for (int i = 0; i < 512; i++)
+		{
+			inodes[i] = getDiskInode(i);
+		}
 		return 1;
 	}
 	else
@@ -67,6 +72,7 @@ int FileSystem::Initialize(string diskFile)
 			file.write(buffer, filesize);					//操作成功
 			IsInitalized = true;
 			file.close();
+			WriteSuperBlock();
 			return 1;
 		}
 	}
@@ -144,19 +150,6 @@ void FileSystem::init()
 	dInodeStart = DINODESTART;	//i节点起始地址
 	dataStart = DATASTART;		//目录、文件区起始地址
 
-	superBlock.dataBlockNumber = 512;
-	superBlock.freeBlockNumber = 0;
-	superBlock.freeBlocks[0] = 0;			//终止指针，指针终止
-	superBlock.freeStackBlockNumber = 1;
-	superBlock.freeInodeNumber = 512;
-	for (int i = 0; i < superBlock.freeInodeNumber; i++)
-	{
-		superBlock.freeInodes[i] = i;
-	}
-	superBlock.iNodeBlockNumber = 32;
-	superBlock.lastInode = superBlock.freeInodeNumber - 1;
-	superBlock.modifyFlag = false;
-
 	IsInitalized = false;
 }
 
@@ -215,6 +208,20 @@ int FileSystem::format()
 {
 	if (!IsInitalized) return -1;
 	int i;
+
+	superBlock.dataBlockNumber = 512;
+	superBlock.freeBlockNumber = 0;
+	superBlock.freeBlocks[0] = 0;			//终止指针，指针终止
+	superBlock.freeStackBlockNumber = 1;
+	superBlock.freeInodeNumber = 0;
+	for (int i = 0; i < superBlock.freeInodeNumber; i++)
+	{
+		superBlock.freeInodes[i] = i;
+	}
+	superBlock.iNodeBlockNumber = 32;
+	superBlock.lastInode = superBlock.freeInodeNumber - 1;
+	superBlock.modifyFlag = false;
+
 	for (i = this->blockSize - 1; i >= 0; i--)
 	{
 		if (bfree(i) < 0)
@@ -235,15 +242,19 @@ int FileSystem::format()
 		permissions[i] = true;
 	}
 	permissions[8] = false;
+	/*
 	short blockIndex[10];
 	blockIndex[0] = balloc();
 	for (i = 1; i < 10; i++)
 	{
 		blockIndex[i] = -1;
 	}
+	*/
 	int rootIndex = ialloc();
-	inodes[rootIndex].init(1, 1, 1, permissions, 'r', 'R', 0, time(0), blockIndex);
-	refreshInode(rootIndex);
+	inodes[rootIndex].init(1, 1, 1, permissions, 'r', 'R', 0, time(0), NULL);
+	refreshDiskInode(rootIndex);
+	superBlock.lastInode = rootIndex;
+	WriteSuperBlock();
 	return 1;
 }
 
@@ -276,6 +287,104 @@ int FileSystem::WriteABlock(int blockNumber, char * buffer)
 	return -1;
 }
 
+//整型转换为缓冲区
+void IntToCharP(int nums, char * numc)
+{
+	int i;
+	int n = nums;
+	for (i = 0; i < 4; i++)
+	{
+		numc[3 - i] = n;
+		n >>= 8;
+	}
+}
+
+//缓冲区转换为整型
+int CharPToInt(char * numc)
+{
+	int i;
+	int n, nums;
+	nums = 0;
+	for (i = 0; i < 4; i++)
+	{
+		nums <<= 8;
+		n = numc[i];
+		if (n < 0) n += 256;			//避免转换时的变号
+		nums |= n;
+	}
+	return nums;
+}
+
+int FileSystem::ReadSuperBlock()
+{
+	if (!IsInitalized) return -1;
+	char buffer[512] = { 0 };
+	char stackBuffer[512] = { 0 };
+	char intBuffer[4];
+	if (ReadABlock(1, buffer) < 0) return -2;				//读取失败
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 0, 32);
+	superBlock.iNodeBlockNumber = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 32, 32);
+	superBlock.freeInodeNumber = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 64, 32);
+	superBlock.lastInode = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 96, 32);
+	superBlock.dataBlockNumber = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 128, 32);
+	superBlock.freeBlockNumber = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 160, 32);
+	superBlock.freeStackBlockNumber = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(intBuffer, 0, buffer, 192, 32);
+	superBlock.modifyFlag = CharPToInt(intBuffer);
+
+	BitOperate::bitCopy(stackBuffer, 0, buffer, 256, 816);
+	BufferToStack(stackBuffer, superBlock.freeBlocks);
+
+	return 1;
+}
+
+int FileSystem::WriteSuperBlock()
+{
+	if (!IsInitalized) return -1;
+	char buffer[512] = { 0 };
+	char stackBuffer[512] = { 0 };
+	char intBuffer[4] = { 0 };
+
+	IntToCharP(superBlock.iNodeBlockNumber, intBuffer);
+	BitOperate::bitCopy(buffer, 0, intBuffer, 0, 32);
+
+	IntToCharP(superBlock.freeInodeNumber, intBuffer);
+	BitOperate::bitCopy(buffer, 32, intBuffer, 0, 32);
+	
+	IntToCharP(superBlock.lastInode, intBuffer);
+	BitOperate::bitCopy(buffer, 64, intBuffer, 0, 32);
+	
+	IntToCharP(superBlock.dataBlockNumber, intBuffer);
+	BitOperate::bitCopy(buffer, 96, intBuffer, 0, 32);
+	
+	IntToCharP(superBlock.freeBlockNumber, intBuffer);
+	BitOperate::bitCopy(buffer, 128, intBuffer, 0, 32);
+	
+	IntToCharP(superBlock.freeStackBlockNumber,intBuffer);
+	BitOperate::bitCopy(buffer, 160, intBuffer, 0, 32);
+	
+	IntToCharP(superBlock.modifyFlag, intBuffer);
+	BitOperate::bitCopy(buffer, 192, intBuffer, 0, 32);
+	
+	StackToBuffer(superBlock.freeBlocks, stackBuffer);
+	BitOperate::bitCopy(buffer, 256, stackBuffer, 0, 816);
+
+	if (WriteABlock(1, buffer) < 0) return -2;				//写入失败
+	return 1;
+}
+
 //存储在磁盘块中的空闲块栈转化成内存中的便于程序使用的数组（栈）
 int FileSystem::BufferToStack(char * buffer, short * blockStack)
 {
@@ -286,7 +395,7 @@ int FileSystem::BufferToStack(char * buffer, short * blockStack)
 	short tempshort = buffer[1];
 	if (tempshort < 0) tempshort = -tempshort;
 	number |= tempshort;
-	if (number != this->nicFree) return 0;
+	//if (number != this->nicFree) return 0;
 	for (int i = 0; i < this->nicFree; i++)
 	{
 		blockStack[i] = buffer[pointer];
@@ -333,7 +442,11 @@ int FileSystem::ialloc()
 	if (i >= 0 && i < 512)
 	{
 		this->inodes[i].init(false, 0, 0, NULL, '\0', '\0', 0, 0, NULL);
-		refreshInode(i);
+		refreshDiskInode(i);
+		superBlock.freeInodeNumber--;
+		superBlock.modifyFlag = true;
+		WriteSuperBlock();
+		superBlock.modifyFlag = false;
 		return i;
 	}
 	return -2;			//没有可用的i节点
@@ -347,11 +460,15 @@ int FileSystem::ifree(int index)
 	int i = index;
 	this->inodes[index].state = false;
 	this->inodes[i].init(false, 0, 0, NULL, '\0', '\0', 0, 0, NULL);
-	refreshInode(i);
+	refreshDiskInode(i);
+	superBlock.freeInodeNumber++;
+	superBlock.modifyFlag = true;
+	WriteSuperBlock();
+	superBlock.modifyFlag = false;
 	return 1;
 }
 
-int FileSystem::refreshInode(int index)
+int FileSystem::refreshDiskInode(int index)
 {
 	if (!IsInitalized) return -1;
 	if (index < 0 || index >= 512) return -2;
@@ -365,3 +482,22 @@ int FileSystem::refreshInode(int index)
 	return 1;
 }
 
+Inode & FileSystem::getDiskInode(int index)
+{
+	Inode inode;
+	char inodeBuffer[32] = { 0 };
+	char blockBuffer[512] = { 0 };
+	int i = index;
+	ReadABlock(2 + i / 16, blockBuffer);
+	BitOperate::bitCopy(inodeBuffer, 0, blockBuffer, i % 16 * 256, 256);
+	inode.LoadInodeInBuffer(inodeBuffer);
+	return inode;
+}
+
+int FileSystem::mkdir(int id, char userName, char userGroup, string folderName)
+{
+	if (this->inodes[id].state != true) return -1;				//空节点
+	if (this->inodes[id].fileType != 1) return -2;				//只能在 文件夹 下创建 文件夹
+	//if(this->inodes[])
+	return 0;
+}

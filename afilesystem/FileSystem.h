@@ -83,6 +83,12 @@ public:
 	//写一个块
 	int WriteABlock(int blockNumber, char * buffer);
 
+	//读超级块
+	int ReadSuperBlock();
+
+	//写超级块
+	int WriteSuperBlock();
+
 	//存储在磁盘块中的空闲块栈转化成内存中的便于程序使用的数组（栈）
 	int BufferToStack(char * buffer, short * blockStack);
 
@@ -95,7 +101,12 @@ public:
 	//磁盘i节点的回收
 	int ifree(int index);
 
-	int refreshInode(int index);
+	//更新硬盘I节点区
+	int refreshDiskInode(int index);
+
+	//获取硬盘上的I节点
+	Inode & getDiskInode(int index);
+
 	//内存i节点获取
 	int iget();
 
@@ -139,7 +150,7 @@ public:
 	int write();
 
 	//创建目录
-	int mkdir();
+	int mkdir(int id, char userName, char userGroup, string folderName);
 
 	//改变当前目录
 	int chdir();
