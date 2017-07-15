@@ -3,6 +3,7 @@
 
 #include "FileSystem.h"
 #include "BitOperate.h"
+#include "FolderItem.h"
 
 FileSystem::FileSystem()
 {
@@ -160,6 +161,23 @@ int FileSystem::access(short id, char user, char group)
 
 int FileSystem::namei(short id, string name)
 {
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;
+	if (inodes[id].fileType != 1) return -3;
+	if (name.length == 0) return -4;
+	int folderNumber = iname(id);					//所有文件夹数
+	int i, j, folderItemNumber;					//folderItemNumber 当前块中项数
+	char blockBuffer[512];
+	for (i = 0; i < inodes[id].blockNumber; i++)
+	{
+		ReadABlock(34 + inodes[id].blocksIndex[i], blockBuffer);
+		if (folderNumber >= 32) folderItemNumber = 32;
+		else folderItemNumber = folderNumber;
+		for (j = 0; j < folderItemNumber; j++)
+		{
+
+		}
+	}
 	return 0;
 }
 
@@ -518,18 +536,21 @@ int FileSystem::mkdir(short id, char userName, char userGroup, string folderName
 {
 	if (this->inodes[id].state != true) return -1;				//空节点
 	if (this->inodes[id].fileType != 1) return -2;				//只能在 文件夹 下创建 文件夹
+	if (folderName.length > 14 || folderName.length < 0) return -3;
 	int storeArea = iname(id);
-	int newBlock;				//（有可能）申请一个块
+	int thisBlock;				//（有可能）申请一个块
 	int newInode;				//申请一个i节点
 	int i;
+
 	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
 	{
-		newBlock = balloc();
-		if (newBlock < 0) return -3;
+		thisBlock = balloc();
+		if (thisBlock < 0) return -3;
 		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
-		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = newBlock;
+		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
 		this->inodes[id].blockNumber++;
 	}
+	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
 	newInode = ialloc();
 	if (newInode < 0) return -5;					//i节点用光了
 	bool permissions[9];
@@ -543,6 +564,11 @@ int FileSystem::mkdir(short id, char userName, char userGroup, string folderName
 	this->inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
 	char blockBuffer[512];
 	char folderItemBuffer[16];
+	ReadABlock(34 + thisBlock, blockBuffer);
+	FolderItem fitem(folderName, newInode);
+	FolderItem::FolderItemToBuffer(fitem, folderItemBuffer);
+	BitOperate::bitCopy(blockBuffer, storeArea % 32, folderItemBuffer, 0, 128);
+	this->inodes[id].fileSize += 16;
 	//storeArea / 32
 	return 0;
 }

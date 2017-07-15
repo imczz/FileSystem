@@ -36,6 +36,9 @@
     <ClCompile Include="BitOperate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FolderItem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileSystem.h">
@@ -54,6 +57,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="BitOperate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FolderItem.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -112,6 +112,7 @@
   <ItemGroup>
     <ClCompile Include="BitOperate.cpp" />
     <ClCompile Include="FileSystem.cpp" />
+    <ClCompile Include="FolderItem.cpp" />
     <ClCompile Include="Inode.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OS.cpp" />
@@ -121,6 +122,7 @@
   <ItemGroup>
     <ClInclude Include="BitOperate.h" />
     <ClInclude Include="FileSystem.h" />
+    <ClInclude Include="FolderItem.h" />
     <ClInclude Include="Inode.h" />
     <ClInclude Include="OS.h" />
     <ClInclude Include="SuperBlock.h" />
