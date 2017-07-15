@@ -5,7 +5,7 @@
 
 using namespace std;
 
-const enum UN { user0, user1, user2, user3, user4, user5, user6, user7, user8 };
+const enum UN { user0, user1, user2, user3, user4, user5, user6, user7, user8, unknown };
 
 class OS
 {
@@ -29,7 +29,7 @@ public:
 
 	//µÇÈë
 
-	void login(UN id, string key);
+	int login(UN id, string key);
 
 
 

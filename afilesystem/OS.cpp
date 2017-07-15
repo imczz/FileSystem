@@ -1,7 +1,8 @@
 #include "OS.h"
 
-void OS::login(UN id, string key) {
+int OS::login(UN id, string key) {
 
+	int result = 0;
 	switch (id)
 
 	{
@@ -11,6 +12,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("000000") == 0) user = 0;
 
 		cout << "管理员登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -21,6 +23,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("111111") == 0) user = 1;
 
 		cout << "用户1登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -31,6 +34,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("222222") == 0) user = 2;
 
 		cout << "用户2登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -41,6 +45,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("333333") == 0) user = 3;
 
 		cout << "用户3登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -51,6 +56,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("444444") == 0) user = 4;
 
 		cout << "用户4登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -61,6 +67,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("555555") == 0) user = 5;
 
 		cout << "用户5登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -71,6 +78,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("666666") == 0) user = 6;
 
 		cout << "用户6登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -81,6 +89,7 @@ void OS::login(UN id, string key) {
 		if (key.compare("777777") == 0) user = 7;
 
 		cout << "用户7登录成功" << endl;
+		result = 200;
 
 		break;
 
@@ -91,11 +100,15 @@ void OS::login(UN id, string key) {
 		if (key.compare("888888") == 0) user = 8;
 
 		cout << "用户8登录成功" << endl;
+		result = 200;
 
 		break;
 
+	case unknown:
 
+		cout << "登录失败" << endl;
 
+		break;
 	default:
 
 		cout << "登录失败" << endl;
@@ -103,7 +116,7 @@ void OS::login(UN id, string key) {
 		break;
 
 	}
-
+	return result;
 }
 
 

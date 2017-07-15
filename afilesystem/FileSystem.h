@@ -27,6 +27,8 @@ using namespace std;
 
 class FileSystem
 {
+	friend class OS;
+
 	string diskFile;
 	int type;
 
@@ -138,16 +140,16 @@ public:
 	int close();
 
 	//文件创建
-	int CreateFile();
+	int CreateFile(short id, char userName, char userGroup, string fileName);
 
 	//文件删除
-	int DeleteFile();
+	int DeleteFile(short id, char userName, char userGroup, string fileName);
 
 	//读取文件
-	int read();
+	int read(short id, char userName, char userGroup, char * buffer);
 
 	//写入文件
-	int write();
+	int write(short id, char userName, char userGroup, char * buffer);
 
 	//创建目录
 	int mkdir(short id, char userName, char userGroup, string folderName);

@@ -156,7 +156,36 @@ void FileSystem::init()
 
 int FileSystem::access(short id, char user, char group)
 {
-	return 0;
+	if (!IsInitalized) return -1;
+	int acc = 0;
+	if (inodes[id].userName == user)
+	{
+		if (inodes[id].permissions[0] == true) acc |= 1;
+		acc <<= 1;
+		if (inodes[id].permissions[1] == true) acc |= 1;
+		acc <<= 1;
+		if (inodes[id].permissions[2] == true) acc |= 1;
+	}
+	else
+	{
+		if (inodes[id].userGroup = group)
+		{
+			if (inodes[id].permissions[3] == true) acc |= 1;
+			acc <<= 1;
+			if (inodes[id].permissions[4] == true) acc |= 1;
+			acc <<= 1;
+			if (inodes[id].permissions[5] == true) acc |= 1;
+		}
+		else
+		{
+			if (inodes[id].permissions[6] == true) acc |= 1;
+			acc <<= 1;
+			if (inodes[id].permissions[7] == true) acc |= 1;
+			acc <<= 1;
+			if (inodes[id].permissions[8] == true) acc |= 1;
+		}
+	}
+	return acc;
 }
 
 int FileSystem::namei(short id, string name)
@@ -164,10 +193,12 @@ int FileSystem::namei(short id, string name)
 	if (!IsInitalized) return -1;
 	if (inodes[id].state == false) return -2;
 	if (inodes[id].fileType != 1) return -3;
-	if (name.length == 0) return -4;
+	if (name.length() == 0) return -4;
 	int folderNumber = iname(id);					//所有文件夹数
 	int i, j, folderItemNumber;					//folderItemNumber 当前块中项数
 	char blockBuffer[512];
+	char foderItem[16];
+	FolderItem aFolderItem;
 	for (i = 0; i < inodes[id].blockNumber; i++)
 	{
 		ReadABlock(34 + inodes[id].blocksIndex[i], blockBuffer);
@@ -175,10 +206,15 @@ int FileSystem::namei(short id, string name)
 		else folderItemNumber = folderNumber;
 		for (j = 0; j < folderItemNumber; j++)
 		{
-
+			BitOperate::bitCopy(foderItem, 0, blockBuffer, j * 128, 128);
+			aFolderItem.LoadFromBuffer(foderItem);
+			if (aFolderItem.name == name)
+			{
+				return aFolderItem.inode;
+			}
 		}
 	}
-	return 0;
+	return -1;
 }
 
 int FileSystem::iname(short id)
@@ -293,6 +329,109 @@ int FileSystem::format()
 	refreshDiskInode(rootIndex);
 	superBlock.lastInode = rootIndex;
 	WriteSuperBlock();
+	return 1;
+}
+
+int FileSystem::CreateFile(short id, char userName, char userGroup, string fileName)
+{
+	if (!IsInitalized) return -1;
+	if (fileName == "") return -2;
+	if (fileName.length() > 14 || fileName.length() < 0) return -3;
+	int storeArea = iname(id);
+	int thisBlock;				//（有可能）申请一个块
+	int newInode;				//申请一个i节点
+	int i;
+	if (namei(id, fileName) != -1) return -10;			//重名文件
+	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	{
+		thisBlock = balloc();
+		if (thisBlock < 0) return -3;
+		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
+		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
+		this->inodes[id].blockNumber++;
+	}
+	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+	newInode = ialloc();
+	if (newInode < 0) return -5;					//i节点用光了
+	bool permissions[9];
+	for (i = 0; i < 8; i++)
+	{
+		permissions[i] = true;
+	}
+	permissions[8] = false;
+	inodes[newInode].init(1, 0, 0, permissions, userName, userGroup, 0, time(0), NULL);			//普通文件
+
+	this->inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+	char blockBuffer[512];
+	char folderItemBuffer[16];
+	ReadABlock(34 + thisBlock, blockBuffer);
+	FolderItem fitem(fileName, newInode);
+	refreshDiskInode(newInode);
+	FolderItem::FolderItemToBuffer(fitem, folderItemBuffer);
+	BitOperate::bitCopy(blockBuffer, storeArea % 32 * 128, folderItemBuffer, 0, 128);
+
+	WriteABlock(34 + thisBlock, blockBuffer);
+	this->inodes[id].fileSize += 16;
+
+	return 1;
+}
+
+int FileSystem::DeleteFile(short id, char userName, char userGroup, string fileName)
+{
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;
+	inodes[id].state = false;					//改变标志位
+	refreshDiskInode(id);
+	return 1;
+}
+
+int FileSystem::read(short id, char userName, char userGroup, char * buffer)
+{
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;				//不存在的文件
+
+	int storeArea = iname(id);
+	int thisBlock;				//（有可能）申请一个块
+	int newInode;				//申请一个i节点
+	int i;
+	//if (namei(id, folderName) != -1) return -10;						//重名文件
+	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	{
+		thisBlock = balloc();
+		if (thisBlock < 0) return -3;
+		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
+		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
+		this->inodes[id].blockNumber++;
+	}
+	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+
+	ReadABlock(thisBlock, buffer);
+
+	return 1;
+}
+
+int FileSystem::write(short id, char userName, char userGroup, char * buffer)
+{
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;				//不存在的文件
+
+	int storeArea = iname(id);
+	int thisBlock;				//（有可能）申请一个块
+	int newInode;				//申请一个i节点
+	int i;
+	//if (namei(id, folderName) != -1) return -10;						//重名文件
+	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	{
+		thisBlock = balloc();
+		if (thisBlock < 0) return -3;
+		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
+		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
+		this->inodes[id].blockNumber++;
+	}
+	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+
+	WriteABlock(thisBlock, buffer);
+
 	return 1;
 }
 
@@ -468,6 +607,7 @@ int FileSystem::StackToBuffer(short * blockStack, char * buffer)
 	return 1;
 }
 
+//获得一个可用的i节点
 short FileSystem::ialloc()
 {
 	if (!IsInitalized) return -1;
@@ -490,6 +630,7 @@ short FileSystem::ialloc()
 	return -2;			//没有可用的i节点
 }
 
+//释放一个曾经被使用的i节点
 int FileSystem::ifree(short index)
 {
 	if (!IsInitalized) return -1;
@@ -536,12 +677,12 @@ int FileSystem::mkdir(short id, char userName, char userGroup, string folderName
 {
 	if (this->inodes[id].state != true) return -1;				//空节点
 	if (this->inodes[id].fileType != 1) return -2;				//只能在 文件夹 下创建 文件夹
-	if (folderName.length > 14 || folderName.length < 0) return -3;
+	if (folderName.length() > 14 || folderName.length() < 0) return -3;
 	int storeArea = iname(id);
 	int thisBlock;				//（有可能）申请一个块
 	int newInode;				//申请一个i节点
 	int i;
-
+	if (namei(id, folderName) != -1) return -10;						//重名文件
 	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
 	{
 		thisBlock = balloc();
@@ -559,16 +700,19 @@ int FileSystem::mkdir(short id, char userName, char userGroup, string folderName
 		permissions[i] = true;
 	}
 	permissions[8] = false;
-	inodes[newInode].init(1, 1, 0, permissions, 'r', 'R', 0, time(0), NULL);
+	inodes[newInode].init(1, 1, 0, permissions, userName, userGroup, 0, time(0), NULL);			//目录文件
 
 	this->inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
 	char blockBuffer[512];
-	char folderItemBuffer[16];
+	char folderItemBuffer[32];
 	ReadABlock(34 + thisBlock, blockBuffer);
 	FolderItem fitem(folderName, newInode);
+	refreshDiskInode(newInode);
 	FolderItem::FolderItemToBuffer(fitem, folderItemBuffer);
-	BitOperate::bitCopy(blockBuffer, storeArea % 32, folderItemBuffer, 0, 128);
+	BitOperate::bitCopy(blockBuffer, storeArea % 32 * 128, folderItemBuffer, 0, 128);
+
+	WriteABlock(34 + thisBlock, blockBuffer);
 	this->inodes[id].fileSize += 16;
-	//storeArea / 32
-	return 0;
+
+	return 1;
 }

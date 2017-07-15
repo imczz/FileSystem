@@ -115,6 +115,7 @@
     <ClCompile Include="FolderItem.cpp" />
     <ClCompile Include="Inode.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MemoryInode.cpp" />
     <ClCompile Include="OS.cpp" />
     <ClCompile Include="SuperBlock.cpp" />
     <ClCompile Include="user.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="FileSystem.h" />
     <ClInclude Include="FolderItem.h" />
     <ClInclude Include="Inode.h" />
+    <ClInclude Include="MemoryInode.h" />
     <ClInclude Include="OS.h" />
     <ClInclude Include="SuperBlock.h" />
     <ClInclude Include="user.h" />

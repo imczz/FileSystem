@@ -39,7 +39,7 @@ int FolderItem::FolderItemToBuffer(FolderItem & item, char * buffer)
 	if (item.name == "") return -1;
 	char fname[16] = { 0 };
 	int i;
-	for (i = 0; i < item.name.length && i < 14; i++)
+	for (i = 0; i < item.name.length() && i < 14; i++)
 	{
 		fname[i] = item.name[i];
 	}
@@ -47,7 +47,7 @@ int FolderItem::FolderItemToBuffer(FolderItem & item, char * buffer)
 	inode[1] = item.inode;
 	inode[0] = item.inode >> 8;
 	BitOperate::bitCopy(buffer, 0, fname, 0, 112);
-	BitOperate::bitCopy(buffer, 113, inode, 0, 16);
+	BitOperate::bitCopy(buffer, 112, inode, 0, 16);
 	return 1;
 }
 
