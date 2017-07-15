@@ -153,6 +153,26 @@ void FileSystem::init()
 	IsInitalized = false;
 }
 
+int FileSystem::access(short id, char user, char group)
+{
+	return 0;
+}
+
+int FileSystem::namei(short id, string name)
+{
+	return 0;
+}
+
+int FileSystem::iname(short id)
+{
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;
+	if (inodes[id].fileType != 1) return -3;
+	int size = inodes[id].fileSize;
+	if (size < 0) return -4;
+	return size / 16;
+}
+
 int FileSystem::balloc()
 {
 	if (!IsInitalized) return -1;
@@ -251,7 +271,7 @@ int FileSystem::format()
 	}
 	*/
 	int rootIndex = ialloc();
-	inodes[rootIndex].init(1, 1, 1, permissions, 'r', 'R', 0, time(0), NULL);
+	inodes[rootIndex].init(1, 1, 0, permissions, 'r', 'R', 0, time(0), NULL);
 	refreshDiskInode(rootIndex);
 	superBlock.lastInode = rootIndex;
 	WriteSuperBlock();
@@ -430,7 +450,7 @@ int FileSystem::StackToBuffer(short * blockStack, char * buffer)
 	return 1;
 }
 
-int FileSystem::ialloc()
+short FileSystem::ialloc()
 {
 	if (!IsInitalized) return -1;
 	int result;
@@ -452,7 +472,7 @@ int FileSystem::ialloc()
 	return -2;			//没有可用的i节点
 }
 
-int FileSystem::ifree(int index)
+int FileSystem::ifree(short index)
 {
 	if (!IsInitalized) return -1;
 	if (index < 0 || index >= 512) return -2;
@@ -468,7 +488,7 @@ int FileSystem::ifree(int index)
 	return 1;
 }
 
-int FileSystem::refreshDiskInode(int index)
+int FileSystem::refreshDiskInode(short index)
 {
 	if (!IsInitalized) return -1;
 	if (index < 0 || index >= 512) return -2;
@@ -482,7 +502,7 @@ int FileSystem::refreshDiskInode(int index)
 	return 1;
 }
 
-Inode & FileSystem::getDiskInode(int index)
+Inode & FileSystem::getDiskInode(short index)
 {
 	Inode inode;
 	char inodeBuffer[32] = { 0 };
@@ -494,10 +514,35 @@ Inode & FileSystem::getDiskInode(int index)
 	return inode;
 }
 
-int FileSystem::mkdir(int id, char userName, char userGroup, string folderName)
+int FileSystem::mkdir(short id, char userName, char userGroup, string folderName)
 {
 	if (this->inodes[id].state != true) return -1;				//空节点
 	if (this->inodes[id].fileType != 1) return -2;				//只能在 文件夹 下创建 文件夹
-	//if(this->inodes[])
+	int storeArea = iname(id);
+	int newBlock;				//（有可能）申请一个块
+	int newInode;				//申请一个i节点
+	int i;
+	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	{
+		newBlock = balloc();
+		if (newBlock < 0) return -3;
+		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
+		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = newBlock;
+		this->inodes[id].blockNumber++;
+	}
+	newInode = ialloc();
+	if (newInode < 0) return -5;					//i节点用光了
+	bool permissions[9];
+	for (i = 0; i < 8; i++)
+	{
+		permissions[i] = true;
+	}
+	permissions[8] = false;
+	inodes[newInode].init(1, 1, 0, permissions, 'r', 'R', 0, time(0), NULL);
+
+	this->inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+	char blockBuffer[512];
+	char folderItemBuffer[16];
+	//storeArea / 32
 	return 0;
 }

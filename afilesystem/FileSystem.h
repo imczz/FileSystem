@@ -96,16 +96,16 @@ public:
 	int StackToBuffer(short * blockStack, char * buffer);
 
 	//磁盘i节点的分配
-	int ialloc();
+	short ialloc();
 
 	//磁盘i节点的回收
-	int ifree(int index);
+	int ifree(short index);
 
 	//更新硬盘I节点区
-	int refreshDiskInode(int index);
+	int refreshDiskInode(short index);
 
 	//获取硬盘上的I节点
-	Inode & getDiskInode(int index);
+	Inode & getDiskInode(short index);
 
 	//内存i节点获取
 	int iget();
@@ -114,13 +114,13 @@ public:
 	int iput();
 
 	//判断用户对文件有无某种特性访问权限
-	int access();
+	int access(short id, char user, char group);
 
 	//实现对文件的存取搜索，将给定的路径名转换成所要搜索的文件的内存i结点指针（在目录数组中的位置）
-	int namei();
+	int namei(short id, string name);
 
 	//在当前目录下搜索到一个空的目录数组，以便建立新的目录或文件时使用
-	int iname();
+	int iname(short id);
 
 	//空闲块的分配
 	int balloc();
@@ -150,7 +150,7 @@ public:
 	int write();
 
 	//创建目录
-	int mkdir(int id, char userName, char userGroup, string folderName);
+	int mkdir(short id, char userName, char userGroup, string folderName);
 
 	//改变当前目录
 	int chdir();
