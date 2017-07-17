@@ -10,6 +10,7 @@ FileSystem::FileSystem()
 	init();
 }
 
+//构造函数
 FileSystem::FileSystem(string diskFile)
 {
 	init();
@@ -26,6 +27,7 @@ int FileSystem::Initialize()
 	return 0;
 }
 
+//初始化操作
 int FileSystem::Initialize(string diskFile)
 {
 	if (IsInitalized) return 1;
@@ -110,6 +112,7 @@ int FileSystem::ReadFileSystemDiskFile(string address)
 	return result;
 }
 
+//先行的类的初始化
 void FileSystem::init()
 {
 	blockSize = BLOCKSIZ;		//每块大小
@@ -133,6 +136,7 @@ void FileSystem::init()
 	IsInitalized = false;
 }
 
+//获取文件的可访问信息
 int FileSystem::access(short id, char user, char group)
 {
 	if (!IsInitalized) return -1;
@@ -167,6 +171,7 @@ int FileSystem::access(short id, char user, char group)
 	return acc;
 }
 
+//通过名字查找某一文件或者文件夹的i节点编号
 int FileSystem::namei(short id, string name)
 {
 	if (!IsInitalized) return -1;
@@ -198,6 +203,7 @@ int FileSystem::namei(short id, string name)
 	return -1;
 }
 
+//判断目录文件大小
 int FileSystem::iname(short id)
 {
 	if (!IsInitalized) return -1;
@@ -208,6 +214,7 @@ int FileSystem::iname(short id)
 	return size / 16;
 }
 
+//namei升级版
 FolderItem FileSystem::rich_namei(short id, string name)
 {
 	if (!IsInitalized) return FolderItem();
@@ -239,6 +246,7 @@ FolderItem FileSystem::rich_namei(short id, string name)
 	return FolderItem();
 }
 
+//释放被占用的数据块
 int FileSystem::balloc()
 {
 	if (!IsInitalized) return -1;
@@ -437,6 +445,8 @@ int FileSystem::DeleteAFile(short id, char userName, char userGroup, string file
 	return 1;
 }
 
+
+//读某个文件
 int FileSystem::read(short id, char userName, char userGroup, int & byteLength, char * buffer)
 {
 	if (!IsInitalized) return -1;
@@ -462,6 +472,7 @@ int FileSystem::read(short id, char userName, char userGroup, int & byteLength, 
 	return 1;
 }
 
+//写某个文件
 int FileSystem::write(short id, char userName, char userGroup, int byteLength, char * buffer)
 {
 	if (!IsInitalized) return -1;
@@ -508,7 +519,7 @@ int FileSystem::write(short id, char userName, char userGroup, int byteLength, c
 }
 
 
-
+//读一个块
 int FileSystem::ReadABlock(int blockNumber, char * buffer)
 {
 	if (buffer == NULL || !IsInitalized) return -1;
@@ -523,6 +534,8 @@ int FileSystem::ReadABlock(int blockNumber, char * buffer)
 	return -1;
 }
 
+
+//写一个块
 int FileSystem::WriteABlock(int blockNumber, char * buffer)
 {
 	if (this->diskFile == "" || !IsInitalized || buffer == NULL) return -1;
@@ -564,6 +577,7 @@ int CharPToInt(char * numc)
 	return nums;
 }
 
+//把disk.txt中的超级块部分读到内存中
 int FileSystem::ReadSuperBlock()
 {
 	if (!IsInitalized) return -1;
@@ -599,6 +613,7 @@ int FileSystem::ReadSuperBlock()
 	return 1;
 }
 
+//把内存中的超级快写入disk.txt
 int FileSystem::WriteSuperBlock()
 {
 	if (!IsInitalized) return -1;
@@ -719,6 +734,7 @@ int FileSystem::ifree(short index)
 	return 1;
 }
 
+//通过内存中的i节点表更新disk.txt中存储的i节点
 int FileSystem::refreshDiskInode(short index)
 {
 	if (!IsInitalized) return -1;
@@ -733,6 +749,7 @@ int FileSystem::refreshDiskInode(short index)
 	return 1;
 }
 
+//获取disk.txt中存储的i节点
 Inode & FileSystem::getDiskInode(short index)
 {
 	Inode inode;
