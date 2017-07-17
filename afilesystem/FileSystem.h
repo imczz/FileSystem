@@ -22,6 +22,7 @@
 
 #include "SuperBlock.h"
 #include "Inode.h"
+#include "FolderItem.h"
 
 using namespace std;
 
@@ -124,6 +125,11 @@ public:
 	//在当前目录下搜索到一个空的目录数组，以便建立新的目录或文件时使用
 	int iname(short id);
 
+
+	//查找id目录下的某个文件或者文件夹
+	FolderItem rich_namei(short id, string name);
+
+
 	//空闲块的分配
 	int balloc();
 
@@ -140,16 +146,16 @@ public:
 	int close();
 
 	//文件创建
-	int CreateFile(short id, char userName, char userGroup, string fileName);
+	int CreateAFile(short id, char userName, char userGroup, string fileName);
 
 	//文件删除
-	int DeleteFile(short id, char userName, char userGroup, string fileName);
+	int DeleteAFile(short id, char userName, char userGroup, string fileName);
 
 	//读取文件
-	int read(short id, char userName, char userGroup, char * buffer);
+	int read(short id, char userName, char userGroup, int & byteLength, char * buffer);
 
 	//写入文件
-	int write(short id, char userName, char userGroup, char * buffer);
+	int write(short id, char userName, char userGroup, int byteLength, char * buffer);
 
 	//创建目录
 	int mkdir(short id, char userName, char userGroup, string folderName);

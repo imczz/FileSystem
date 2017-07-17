@@ -14,6 +14,14 @@ FolderItem::FolderItem(string name, short inode)
 	this->inode = inode;
 }
 
+FolderItem::FolderItem(const FolderItem & folderItem)
+{
+	this->blockNumber = folderItem.blockNumber;
+	this->inode = folderItem.inode;
+	this->name = folderItem.name;
+	this->offset = folderItem.offset;
+}
+
 void FolderItem::LoadFromBuffer(char * buffer)
 {
 	char fname[16] = { 0 };

@@ -4,6 +4,7 @@
 class Inode
 {
 	friend class FileSystem;
+	friend class OS;
 protected:
 	bool state;					//状态：true:used，false:empty						(1 bit)
 	int fileType;				//文件类型		0 普通文件 1 目录文件 2 特殊文件	(2 bit)

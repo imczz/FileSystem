@@ -13,34 +13,13 @@ FileSystem::FileSystem()
 FileSystem::FileSystem(string diskFile)
 {
 	init();
-	this->diskFile = diskFile;
-	
-	ifstream file(diskFile, ios::in);
-
-	if (file.is_open()) {
-		IsInitalized = true;
-		file.close();
-		return;
-	}
-	else
-	{
-		int filesize = (2 + this->dInodeBLK + this->fileBLK) * this->blockSize;
-		char * buffer = (char *)calloc(filesize, sizeof(char));
-		if (buffer == NULL) return;						//分配内存空间失败
-		ofstream file(diskFile, ios::out | ios::binary);
-		if (file.is_open()) {
-			file.write(buffer, filesize);					//操作成功
-			IsInitalized = true;
-			file.close();
-		}
-	}
-	
+	Initialize(diskFile);
 }
 
 int FileSystem::Initialize()
 {
 	if (IsInitalized) return 1;
-	if (this->diskFile != "") 
+	if (this->diskFile != "")
 	{
 		Initialize(this->diskFile);
 	}
@@ -93,7 +72,7 @@ int FileSystem::WriteFileSystemDiskFile(string address)
 	{
 
 	}
-	ofstream file(address, ios::out | ios::binary );
+	ofstream file(address, ios::out | ios::binary);
 
 	if (file.is_open()) {
 		file.write(buffer, filesize);					//操作成功
@@ -102,7 +81,7 @@ int FileSystem::WriteFileSystemDiskFile(string address)
 	}
 	else
 	{
-		result =  -3;										//文件打开失败
+		result = -3;										//文件打开失败
 	}
 	free(buffer);
 	return result;
@@ -210,6 +189,8 @@ int FileSystem::namei(short id, string name)
 			aFolderItem.LoadFromBuffer(foderItem);
 			if (aFolderItem.name == name)
 			{
+				aFolderItem.blockNumber = i;
+				aFolderItem.offset = j * 16;
 				return aFolderItem.inode;
 			}
 		}
@@ -227,6 +208,37 @@ int FileSystem::iname(short id)
 	return size / 16;
 }
 
+FolderItem FileSystem::rich_namei(short id, string name)
+{
+	if (!IsInitalized) return FolderItem();
+	if (inodes[id].state == false) return FolderItem();
+	if (inodes[id].fileType != 1) return FolderItem();
+	if (name.length() == 0) return FolderItem();
+	int folderNumber = iname(id);					//所有文件夹数
+	int i, j, folderItemNumber;					//folderItemNumber 当前块中项数
+	char blockBuffer[512];
+	char foderItem[16];
+	FolderItem aFolderItem;
+	for (i = 0; i < inodes[id].blockNumber; i++)
+	{
+		ReadABlock(34 + inodes[id].blocksIndex[i], blockBuffer);
+		if (folderNumber >= 32) folderItemNumber = 32;
+		else folderItemNumber = folderNumber;
+		for (j = 0; j < folderItemNumber; j++)
+		{
+			BitOperate::bitCopy(foderItem, 0, blockBuffer, j * 128, 128);
+			aFolderItem.LoadFromBuffer(foderItem);
+			if (aFolderItem.name == name)
+			{
+				aFolderItem.blockNumber = inodes[id].blocksIndex[i];
+				aFolderItem.offset = j * 16;
+				return aFolderItem;
+			}
+		}
+	}
+	return FolderItem();
+}
+
 int FileSystem::balloc()
 {
 	if (!IsInitalized) return -1;
@@ -238,11 +250,11 @@ int FileSystem::balloc()
 		{
 			return -2;
 		}
-		else 
+		else
 		{
 			r = superBlock.freeBlocks[0];
 			ReadABlock(this->dataStart + r, buffer);
-			if(BufferToStack(buffer, superBlock.freeBlocks) < 0 ) return -2;
+			if (BufferToStack(buffer, superBlock.freeBlocks) < 0) return -2;
 			//return r;
 		}
 	}
@@ -271,7 +283,7 @@ int FileSystem::bfree(int blockindex)
 	{
 		superBlock.freeBlocks[superBlock.freeStackBlockNumber] = blockindex;
 		superBlock.freeStackBlockNumber++;
-		
+
 		//课程PPT上提供的方法是栈深51，S[0]是数量，而实验PPT超级快记录了空闲块个数，这样栈深是50
 	}
 	superBlock.freeBlockNumber++;
@@ -332,7 +344,8 @@ int FileSystem::format()
 	return 1;
 }
 
-int FileSystem::CreateFile(short id, char userName, char userGroup, string fileName)
+//在i节点号为id的文件夹下创建文件fileName
+int FileSystem::CreateAFile(short id, char userName, char userGroup, string fileName)
 {
 	if (!IsInitalized) return -1;
 	if (fileName == "") return -2;
@@ -372,66 +385,125 @@ int FileSystem::CreateFile(short id, char userName, char userGroup, string fileN
 
 	WriteABlock(34 + thisBlock, blockBuffer);
 	this->inodes[id].fileSize += 16;
-
-	return 1;
-}
-
-int FileSystem::DeleteFile(short id, char userName, char userGroup, string fileName)
-{
-	if (!IsInitalized) return -1;
-	if (inodes[id].state == false) return -2;
-	inodes[id].state = false;					//改变标志位
 	refreshDiskInode(id);
 	return 1;
 }
 
-int FileSystem::read(short id, char userName, char userGroup, char * buffer)
+//在i节点号为id的文件夹下删除文件fileName
+int FileSystem::DeleteAFile(short id, char userName, char userGroup, string fileName)
+{
+	if (!IsInitalized) return -1;
+	if (inodes[id].state == false) return -2;
+	if (fileName.length() > 14 || fileName.length() < 0) return -3;
+
+	int storeArea = iname(id);					//文件大小/16 = 目录项数
+	short deletedId = namei(id, fileName);
+	if (deletedId == -1) return -10;			//文件不存在
+
+	for (int i = 0; i < inodes[deletedId].blockNumber; i++)
+	{
+		bfree(inodes[deletedId].blocksIndex[i]);					//释放占用的磁盘快
+	}
+
+	FolderItem folderItem = rich_namei(id, fileName);		//查看当前目录项存在于id的哪个位置
+	char blockBuffer[512];
+	char blockBuffer2[512];
+	char folderItemBuffer[16] = { 0 };
+
+	int thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];			//最后一块
+
+	storeArea--;						//目录项减少一个
+
+	ReadABlock(34 + folderItem.blockNumber, blockBuffer);			//获取目录文件片段
+	ReadABlock(34 + thisBlock, blockBuffer2);			//获取最后个目录文件片段
+	BitOperate::bitCopy(blockBuffer, folderItem.offset * 8, blockBuffer2, storeArea % 32 * 128, 128);			//用最后一项填充删除的位置
+	WriteABlock(34 + folderItem.blockNumber, blockBuffer);			//写回块
+
+	ReadABlock(34 + thisBlock, blockBuffer2);			//获取最后个目录文件片段
+	BitOperate::bitCopy(blockBuffer2, storeArea % 32 * 128, folderItemBuffer, 0, 128);				//清空最后一项
+	WriteABlock(34 + thisBlock, blockBuffer2);			//写回块
+
+	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	{
+		bfree(thisBlock);							//释放目录文件快
+		this->inodes[id].blockNumber--;
+	}
+
+	this->inodes[id].fileSize -= 16;
+
+	ifree(deletedId);									//释放i节点
+	refreshDiskInode(deletedId);					//将修改写入disk.txt
+	refreshDiskInode(id);
+	return 1;
+}
+
+int FileSystem::read(short id, char userName, char userGroup, int & byteLength, char * buffer)
 {
 	if (!IsInitalized) return -1;
 	if (inodes[id].state == false) return -2;				//不存在的文件
+	if (inodes[id].fileType != 0) return -3;				//只能读取文件类型
 
-	int storeArea = iname(id);
-	int thisBlock;				//（有可能）申请一个块
-	int newInode;				//申请一个i节点
-	int i;
-	//if (namei(id, folderName) != -1) return -10;						//重名文件
-	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	byteLength = inodes[id].fileSize;
+	if (byteLength >= 5120) return -4;					//过大的文件
+	int p = 0;
+	char tempBuffer[512];
+	int thisBlock;
+
+	for (int i = 0; i < inodes[id].blockNumber; i++)				//块数
 	{
-		thisBlock = balloc();
-		if (thisBlock < 0) return -3;
-		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
-		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
-		this->inodes[id].blockNumber++;
+		thisBlock = inodes[id].blocksIndex[i];
+		ReadABlock(34 + thisBlock, tempBuffer);
+		for (int j = 0; j < 512; j++)							//每块字节数
+		{
+			buffer[i * 125 + j] = tempBuffer[j];
+		}
 	}
-	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
-
-	ReadABlock(thisBlock, buffer);
 
 	return 1;
 }
 
-int FileSystem::write(short id, char userName, char userGroup, char * buffer)
+int FileSystem::write(short id, char userName, char userGroup, int byteLength, char * buffer)
 {
 	if (!IsInitalized) return -1;
 	if (inodes[id].state == false) return -2;				//不存在的文件
+	if (inodes[id].fileType != 0) return -3;				//只能写文件类型
+	int thisBlock = 0;
+	if (byteLength < 0 || byteLength >= 5120) return -4;					//文件大小不正确
 
-	int storeArea = iname(id);
-	int thisBlock;				//（有可能）申请一个块
-	int newInode;				//申请一个i节点
-	int i;
-	//if (namei(id, folderName) != -1) return -10;						//重名文件
-	if (storeArea % 32 == 0)						//没有分配快或者上一块用完了
+	int blockNumber = byteLength / 512;
+	if (byteLength % 512 != 0) blockNumber++;
+
+	if (blockNumber > inodes[id].blockNumber)					//需要更多的块
 	{
-		thisBlock = balloc();
-		if (thisBlock < 0) return -3;
-		if (this->inodes[id].blockNumber == 9) return -4;			//一级链接装满了
-		this->inodes[id].blocksIndex[this->inodes[id].blockNumber] = thisBlock;
-		this->inodes[id].blockNumber++;
+		for (int i = inodes[id].blockNumber; i < blockNumber; i++)
+		{
+			thisBlock = balloc();
+			inodes[id].blocksIndex[i] = thisBlock;
+			inodes[id].blockNumber++;
+		}
 	}
-	thisBlock = inodes[id].blocksIndex[this->inodes[id].blockNumber - 1];
+	else if (blockNumber < inodes[id].blockNumber)				//多余的块
+	{
+		for (int i = inodes[id].blockNumber - 1; i >= blockNumber; i--)
+		{
+			thisBlock = inodes[id].blocksIndex[i];
+			bfree(thisBlock);
+			inodes[id].blockNumber--;
+		}
+	}
+	
+	char tempBuffer[512] = { 0 };
 
-	WriteABlock(thisBlock, buffer);
-
+	for (int i = 0; i < blockNumber; i++)
+	{
+		for (int j = 0; j < 512; j++)
+		{
+			tempBuffer[j] = buffer[i * 512 + j];
+		}
+		thisBlock = inodes[id].blocksIndex[i];
+		WriteABlock(34 + thisBlock, buffer);
+	}
+	refreshDiskInode(id);
 	return 1;
 }
 
@@ -539,22 +611,22 @@ int FileSystem::WriteSuperBlock()
 
 	IntToCharP(superBlock.freeInodeNumber, intBuffer);
 	BitOperate::bitCopy(buffer, 32, intBuffer, 0, 32);
-	
+
 	IntToCharP(superBlock.lastInode, intBuffer);
 	BitOperate::bitCopy(buffer, 64, intBuffer, 0, 32);
-	
+
 	IntToCharP(superBlock.dataBlockNumber, intBuffer);
 	BitOperate::bitCopy(buffer, 96, intBuffer, 0, 32);
-	
+
 	IntToCharP(superBlock.freeBlockNumber, intBuffer);
 	BitOperate::bitCopy(buffer, 128, intBuffer, 0, 32);
-	
-	IntToCharP(superBlock.freeStackBlockNumber,intBuffer);
+
+	IntToCharP(superBlock.freeStackBlockNumber, intBuffer);
 	BitOperate::bitCopy(buffer, 160, intBuffer, 0, 32);
-	
+
 	IntToCharP(superBlock.modifyFlag, intBuffer);
 	BitOperate::bitCopy(buffer, 192, intBuffer, 0, 32);
-	
+
 	StackToBuffer(superBlock.freeBlocks, stackBuffer);
 	BitOperate::bitCopy(buffer, 256, stackBuffer, 0, 816);
 
@@ -713,6 +785,6 @@ int FileSystem::mkdir(short id, char userName, char userGroup, string folderName
 
 	WriteABlock(34 + thisBlock, blockBuffer);
 	this->inodes[id].fileSize += 16;
-
+	refreshDiskInode(id);
 	return 1;
 }

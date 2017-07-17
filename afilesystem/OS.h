@@ -2,16 +2,40 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
+
+#include "FileSystem.h"
 
 using namespace std;
 
 const enum UN { user0, user1, user2, user3, user4, user5, user6, user7, user8, unknown };
 
+struct SystemOpenFileListItem
+{
+	string name;
+	short id;
+
+	SystemOpenFileListItem();
+
+	SystemOpenFileListItem(string name, short id);
+
+	SystemOpenFileListItem(const SystemOpenFileListItem & sofli);
+};
+
 class OS
 {
 public:
 
+	vector< FileSystem * > fsList;
 
+	vector< SystemOpenFileListItem > openList;
+
+	//构造函数
+	OS();
+
+
+	//析构函数
+	~OS();
 
 	/* -1：无登陆
 
@@ -87,6 +111,20 @@ public:
 	//格式化
 
 	void format();
+
+
+	//terminal
+	void start();
+
+	//主菜单
+	int menu0();
+
+	void outCurrentInode();
+
+	void ls();
+
+	//帮助
+	void help();
 
 };
 

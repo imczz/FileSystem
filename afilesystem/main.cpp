@@ -9,59 +9,7 @@ using namespace std;
 int main()
 {
 	OS os;
-	string username;
-	string password;
-	UN user;
-	cout << "请输入用户名:" <<endl;
-	cin >> username;
-	cout << "请输入密码:" << endl;
-	cin >> password;
-	if (username == "root")
-	{
-		user = user0;
-	}
-	else
-	{
-		if (username.size() == 5 && username.substr(0, 4) == "user")
-		{
-			switch (username[4])
-			{
-			case '1':
-				user = user1;
-				break;
-			case '2':
-				user = user2;
-				break;
-			case '3':
-				user = user3;
-				break;
-			case '4':
-				user = user4;
-				break;
-			case '5':
-				user = user5;
-				break;
-			case '6':
-				user = user6;
-				break;
-			case '7':
-				user = user7;
-				break;
-			case '8':
-				user = user8;
-				break;
-			}
-		}
-		else
-		{
-			user = unknown;
-		}
-	}
-	if (os.login(user, password) != 200)
-	{
-		system("pause");
-		exit(0);
-	}
+	/*
 	FileSystem fs;
 	cout << fs.Initialize() << endl;
 	cout << fs.Initialize("D:\\disk.txt") << endl;
@@ -83,10 +31,23 @@ int main()
 	fs.CreateFile(2, 'h', 'E', "grub.bin");
 	fs.CreateFile(2, 'h', 'E', "run.bin");
 	fs.CreateFile(2, 'h', 'E', "terminal.bin");
+	fs.CreateFile(2, 'h', 'E', "terminal.bin");
 	fs.mkdir(2, 'i', 'F', "image");
 
-	cout << "Hello world!" << endl;
+	fs.DeleteFile(2, '2', 'k', "terminal.bin");
+
+	char str[36] = "Hello world!in the file";
+	char buffer[5120] = { 0 };
+	int len;
+
+	fs.write(11, 'x', 'y', 36, str);
+	fs.read(11, 'z', 'p', len, buffer);
+
+	cout << buffer << endl << "length :" << len << endl;;
 	os.logout();
+	*/
+	os.start();
+
 	system("pause");
 	return 0;
 }
